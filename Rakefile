@@ -21,17 +21,13 @@ task :get_access_token => :get_appid_appsecret do
             raise e.response
         end
         
-        if not response.respond_to? :body
-            raise "The response object returned from RestClient must contain a body attribute."
-        end
-
         body = JSON.parse(response.body)
 
-        if body.has_key? "errcode" && body["errcode"] != 0
+        if body.key?("errcode") && (body["errcode"] != 0)
             raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
         end
 
-        if not body.has_key? "access_token"
+        if not body.key?("access_token")
             raise "Access token should be return here, there must be somthing wrong."
         end
 
@@ -46,13 +42,13 @@ task :get_appid_appsecret do
     if File.exists?(config_file)
         yml = YAML.load_file config_file
 
-        if yml.has_key? "app_id"
+        if yml.key?("app_id")
             app_id = yml["app_id"]
         else
             raise "app_id is not specified in #{config_file}"
         end
 
-        if yml.has_key? "app_secret"
+        if yml.key?("app_secret")
             app_secret = yml["app_secret"]
         else
             raise "app_secret is not specified in #{config_file}"
@@ -72,13 +68,117 @@ task :mass_sendall_text => :get_access_token do
         raise e.response
     end
     
-    if not response.respond_to? :body
-        raise "The response object returned from RestClient must contain a body attribute."
-    end
-
     body = JSON.parse(response.body)
 
-    if body.has_key? "errcode" && body["errcode"] != 0
+    if body.key? "errcode" && body["errcode"] != 0
         raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
     end
+end
+
+task :media_upload_tmp => :get_access_token do
+    url = "https://api.weixin.qq.com/cgi-bin/media/upload?access_token=#{access_token}&type=image"
+    data = {:upload => {:media => File.open("ruby.png")}}
+
+    begin
+        response = RestClient.post(url, data)
+    rescue RestClient::ExceptionWithResponse => e
+        raise e.response
+    end
+    
+    body = JSON.parse(response.body)
+    if body.key?("errcode") && (body["errcode"] != 0)
+        raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
+    end
+
+    puts body
+end
+
+task :media_get_tmp => :get_access_token do
+    url = "https://api.weixin.qq.com/cgi-bin/media/get?access_token=#{access_token}&media_id=UPgCF2jUp_OWMtyaaGK4iYaX21hs6dpMAA0DWHZF5iLhesu7BRWYWK85EMvRV4kd"
+
+    begin
+        response = RestClient.get(url)
+    rescue RestClient::ExceptionWithResponse => e
+        raise e.response
+    end
+    
+    File.open("test.jpg", "w:binary").write(response.body)
+    puts JSON.pretty_generate(response.headers)
+    body = JSON.parse(response.body)
+    if body.key?("errcode") && (body["errcode"] != 0)
+        raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
+    end
+end
+
+
+task :media_upload => :get_access_token do
+    url = "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=#{access_token}"
+    data = {:upload => {:media => File.open("git.jpg")}}
+
+    begin
+        response = RestClient.post(url, data)
+    rescue RestClient::ExceptionWithResponse => e
+        raise e.response
+    end
+    
+    body = JSON.parse(response.body)
+    if body.key?("errcode") && (body["errcode"] != 0)
+        raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
+    end
+
+    puts body
+end
+
+task :add_material => :get_access_token do
+    url = "https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=#{access_token}&type=image"
+    data = {:media => File.open("nodejs.png")}
+
+    begin
+        response = RestClient.post(url, data)
+    rescue RestClient::ExceptionWithResponse => e
+        raise e.response
+    end
+    
+    puts response
+    body = JSON.parse(response.body)
+    if body.key?("errcode") && (body["errcode"] != 0)
+        raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
+    end
+
+    puts body
+end
+
+task :batchget_material => :get_access_token do
+    url = "https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token=#{access_token}"
+    data = {type: "image", offset: 0, count: 10}
+
+    begin
+        response = RestClient.post(url, data.to_json)
+    rescue RestClient::ExceptionWithResponse => e
+        raise e.response
+    end
+    
+    body = JSON.parse(response.body)
+    if body.key?("errcode") && (body["errcode"] != 0)
+        raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
+    end
+
+    puts body
+end
+
+task :get_materialcount => :get_access_token do
+    url = "https://api.weixin.qq.com/cgi-bin/material/get_materialcount?access_token=#{access_token}"
+
+    begin
+        response = RestClient.get(url)
+    rescue RestClient::ExceptionWithResponse => e
+        raise e.response
+    end
+    
+    body = JSON.parse(response.body)
+    if body.key?("errcode") && (body["errcode"] != 0)
+        raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
+    end
+
+    puts body
 end
