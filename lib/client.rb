@@ -15,7 +15,10 @@ def process_request(type, url, payload, params, header, expect)
   raise "Only post/get HTTP types are supported." if not ["post", "get"].include?(type)
 
   #header[:accept] = 'application/json' if expect == 'json'
-  url = "https://api.weixin.qq.com/cgi-bin/" + url
+  puts url
+  if not (url =~ /^http/)
+    url = "https://api.weixin.qq.com/cgi-bin/" + url
+  end
 
   raise "Query parameters must be in type of Hash." if params.class != Hash
   raise "HTTP headers must be in type of Hash." if header.class != Hash

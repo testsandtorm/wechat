@@ -5,8 +5,8 @@ namespace :group do
         puts post('groups/create', payload.to_json)
     end
 
-    desc "Get information of all groups"
-    task :get => 'token:get' do 
+    desc "List information of all groups"
+    task :list => 'token:get' do 
         puts get('groups/get')
     end
 
