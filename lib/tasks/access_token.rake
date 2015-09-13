@@ -19,6 +19,7 @@ namespace :token do
         end
     end
     
+    desc "Get access_token from WeiXin server"
     task :get => :get_appid_appsecret do
         if File.exists?(Globals.access_token_file) && (Time.now - File.mtime(Globals.access_token_file)) < (7200 - 10)
             #File.open(Globals.access_token_file) do |f|
