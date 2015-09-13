@@ -14,3 +14,4 @@ end
 
 Globals.config_file = "./wechat.yml"
 Globals.access_token_file = './.access_token.yml'
+RestClient.log = STDOUT

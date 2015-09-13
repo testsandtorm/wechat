@@ -21,10 +21,10 @@ namespace :token do
     
     task :get => :get_appid_appsecret do
         if File.exists?(Globals.access_token_file) && (Time.now - File.mtime(Globals.access_token_file)) < (7200 - 10)
-            File.open(Globals.access_token_file) do |f|
-                yml = YAML.load_file(Globals.access_token_file);
-                Globals.access_token = yml["access_token"]
-            end
+            #File.open(Globals.access_token_file) do |f|
+            yml = YAML.load_file(Globals.access_token_file);
+            Globals.access_token = yml["access_token"]
+            #end
         else
             url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=#{Globals.app_id}&secret=#{Globals.app_secret}"
             begin
@@ -44,7 +44,7 @@ namespace :token do
             end
     
             File.open(Globals.access_token_file, 'w') do |f|
-                Globals.access_token = yml["access_token"]
+                Globals.access_token = body["access_token"]
                 f.puts "access_token: " + body["access_token"]
             end
         end

@@ -1,7 +1,8 @@
 require 'yaml'
 require 'rest-client'
+require './lib/client'
 
-load 'lib/globals.rb'
+require './lib/globals'
 Dir.glob('lib/tasks/*.rake').each do |rakefile|
     load rakefile
 end

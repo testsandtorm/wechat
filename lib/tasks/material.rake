@@ -1,105 +1,87 @@
 namespace :material do
-    desc "Add material"
-    task :add, [:type, :name, :title, :introduction] => 'token:get' do |t, args|
-        raise "Unsupported material type: #{args.type}" if not ["image", "thumb", "voice", "video"].include?(args.type)
+    desc "Add news material"
+    task :add_news, [:json] => 'token:get' do |t, args|
+        payload = JSON.parse(File.open(args.json).read)
+        puts post('material/add_material', payload.to_json, {type: :image})
+    end
 
-        url = "https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=#{Globals.access_token}&type=#{args.name}"
-        data = {:media => File.open(args.name)}
-        if :type == "video"
-            data[:title] = args.title
-            data[:introduction] = args.introduction
-        end
+    desc "Add image material"
+    task :add_image, [:name] => 'token:get' do |t, args|
+        payload = {:media => File.open(args.name)}
+        puts post('material/add_material', payload, {type: :image})
+    end
+
+    desc "Add voice material"
+    task :add_voice, [:name] => 'token:get' do |t, args|
+        payload = {:media => File.open(args.name)}
+        puts post('material/add_material', payload, {type: :voice})
+    end
+
+    desc "Add thumb material"
+    task :add_thumb, [:name] => 'token:get' do |t, args|
+        payload = {:media => File.open(args.name)}
+        puts post('material/add_material', payload, {type: :thumb})
+    end
+
+    desc "Add video material"
+    task :add_video, [:name, :title, :introduction] => 'token:get' do |t, args|
+        payload = {}
+        payload[:media] = File.open(args.name)
+        payload[:title] = args.title
+        payload[:introduction] = args.introduction
      
-        begin
-            response = RestClient.post(url, data)
-        rescue RestClient::ExceptionWithResponse => e
-            raise e.response
+        puts post('material/add_material', payload, {type: :video})
+    end
+
+    def get_material(type, media_id, file)
+        raise "Unsupported type=#{type}" if not ["image", "voice", "video", "news"].include?(type)
+        if type == "image" || type == "voice"
+          format = :file
+        else 
+          format = :json
         end
         
-        body = JSON.parse(response.body)
-        if body.key?("errcode") && (body["errcode"] != 0)
-            raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
+        payload = {media_id: media_id}
+        if format == :file
+            body = post('material/get_material', payload.to_json, {}, {}, :file)
+            File.open(file, 'w:binary') do |f|
+              f.write(body)
+            end
+            puts "Save to file #{file} successfully."
         else
-            puts JSON.pretty_generate(body)
+          puts post('material/get_material', payload.to_json, {}, {}, :json)
         end
     end
 
-    desc "Get material"
-    task :get, [:type, :media_id] => 'token:get' do |t, args|
-        raise "Unexpected media type: #{args.type}" if not ["image", "voice", "video", "news"].include?(args.type)
+    desc "Get image material"
+    task :get_image, [:media_id, :file] => 'token:get' do |t, args|
+        get_material("image", args.media_id, args.file)
+    end
 
-        url = "https://api.weixin.qq.com/cgi-bin/material/get_material?access_token=#{Globals.access_token}"
-        payload = {media_id: args.media_id}
-    
-        begin
-            response = RestClient.post(url, payload.to_json)
-        rescue RestClient::ExceptionWithResponse => e
-            raise e.response
-        end
-        
-        case args.type
-        when "image"
-            begin
-                # Trying to parse the response as JSON, if that's true, there must be something wrong when downloading the image
-                body = JSON.parse(response.body)
-                if body.key?("errcode") && (body["errcode"] != 0)
-                    raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
-                end
-            rescue JSON::ParserError => e
-                # If the response can not be parsed as JSON, then it is saved as image
-                File.open("#{args.media_id}.jpg", "w:binary").write(response.body)
-                puts "Image saved to #{media_id}.jpg"
-            end
-        when "voice"
-            puts "News get is not supported yet."
-        when "video", "news"
-            body = JSON.parse(response.body)
-            if body.key?("errcode") && (body["errcode"] != 0)
-                raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
-            else
-                puts JSON.pretty_generate(body)
-            end
-        else
-            puts "Impossible branch."
-        end
+    desc "Get voice material"
+    task :get_voice, [:media_id, :file] => 'token:get' do |t, args|
+        get_material("voice", args.media_id, args.file)
+    end
+
+    desc "Get video material"
+    task :get_video, [:media_id] => 'token:get' do |t, args|
+        get_material("video", args.media_id, args.file)
+    end
+
+    desc "Get news material"
+    task :get_news, [:media_id] => 'token:get' do |t, args|
+        get_material("news", args.media_id, args.file)
     end
     
     desc "Get all materials"
     task :batchget, [:type, :offset, :count] => 'token:get' do |t, args|
         args.with_defaults(:type=>'image', :offset=>0, :count=>20)
-
-        url = "https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token=#{Globals.access_token}"
         payload = {type: args.type, offset: args.offset, count: args.count}
-    
-        begin
-            response = RestClient.post(url, payload.to_json)
-        rescue RestClient::ExceptionWithResponse => e
-            raise e.response
-        end
-        
-        body = JSON.parse(response.body)
-        if body.key?("errcode") && (body["errcode"] != 0)
-            raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
-        else
-            puts JSON.pretty_generate(body)
-        end
+        puts post("material/batchget_material", payload.to_json)
     end
     
     desc "Get the count of materials"
     task :count => 'token:get' do
-        url = "https://api.weixin.qq.com/cgi-bin/material/get_materialcount?access_token=#{Globals.access_token}"
-    
-        begin
-            response = RestClient.get(url)
-        rescue RestClient::ExceptionWithResponse => e
-            raise e.response
-        end
-        
-        body = JSON.parse(response.body)
-        if body.key?("errcode") && (body["errcode"] != 0)
-            raise "Wechat server returns errcode: #{body["errcode"]}, errmsg: #{body["errmsg"]}}"
-        else
-            puts JSON.pretty_generate(body)
-        end
+        puts get("material/get_materialcount")
     end
 end
