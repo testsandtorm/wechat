@@ -2,7 +2,7 @@ namespace :material do
     desc "Add news material"
     task :add_news, [:json] => 'token:get' do |t, args|
         payload = JSON.parse(File.open(args.json).read)
-        puts post('material/add_material', payload.to_json, {type: :image})
+        puts post('material/add_news', payload.to_json)
     end
 
     desc "Add image material"
@@ -76,6 +76,9 @@ namespace :material do
     desc "Get all materials"
     task :batchget, [:type, :offset, :count] => 'token:get' do |t, args|
         args.with_defaults(:type=>'image', :offset=>0, :count=>20)
+        raise "Unsupported material type=#{args.type}" if not ["image", "voice", "video", "news"].include?(args.type)
+        raise "Unsupported count=#{args.count}" if not (1..20).include?(args.count.to_i)
+
         payload = {type: args.type, offset: args.offset, count: args.count}
         puts post("material/batchget_material", payload.to_json)
     end
