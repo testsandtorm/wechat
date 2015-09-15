@@ -1,3 +1,4 @@
+require 'digest/md5'
 require 'yaml'
 require 'rest-client'
 require './lib/client'

@@ -2,7 +2,13 @@ namespace :token do
     task :get_appid_appsecret do
         if File.exists?(Globals.config_file)
             yml = YAML.load_file Globals.config_file
-    
+
+            if yml.key?("weixin_id")
+                Globals.weixin_id = yml["weixin_id"]
+            else
+                raise "weixin_id is not specified in #{Globals.config_file}"
+            end
+   
             if yml.key?("app_id")
                 Globals.app_id = yml["app_id"]
             else
